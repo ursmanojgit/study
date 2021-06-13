@@ -1,0 +1,2 @@
+./mksserver &
+./mksclient
