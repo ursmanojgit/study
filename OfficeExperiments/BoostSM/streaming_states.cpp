@@ -32,7 +32,7 @@ struct Exiting_MAIN_SUB;
 struct StopWatch : sc::state_machine< StopWatch, Active >
 {
     // startTime_ remains uninitialized, because there is no reasonable default
-    StopWatch() : elapsedTime_(0.0) {
+    StopWatch(int p) /* replace this param by A2dpSrcQ pointer*/ {
         cout << "StateMachine" << endl;
     };
     ~StopWatch()
@@ -40,27 +40,7 @@ struct StopWatch : sc::state_machine< StopWatch, Active >
         terminate();
     }
 
-    double ElapsedTime() const
-    {
-        // Ugly switch over the current state.
-        if (state_cast<const Idle*>() != 0)
-        {
-            return elapsedTime_;
-        }
-        else if (state_cast<const Entering_SUB1*>() != 0)
-        {
-            return elapsedTime_ + std::difftime(std::time(0), startTime_);
-        }
-        else // we're terminated
-        {
-            throw std::bad_cast();
-        }
-    }
-
-    // elapsedTime_ is only meaningful when the machine is not terminated
-    double elapsedTime_;
-    // startTime_ is only meaningful when the machine is in Entering_SUB1
-    std::time_t startTime_;
+    int mA2dpSrcQ;
 };
 
 struct EvReset : sc::event<EvReset> {};
@@ -73,7 +53,7 @@ struct Active : sc::state< Active, StopWatch, Idle >
     Active(my_context ctx) : my_base(ctx)
     {
         cout << "Entering Active" << endl;
-        outermost_context().elapsedTime_ = 0.0;
+        //outermost_context().elapsedTime_ = 0.0;
     }
 };
 
@@ -84,14 +64,14 @@ struct Entering_SUB1 : sc::state< Entering_SUB1, Active >
     Entering_SUB1(my_context ctx) : my_base(ctx)
     {
         cout << "Entering Entering_SUB1" << endl;
-        outermost_context().startTime_ = std::time(0);
+        //outermost_context().startTime_ = std::time(0);
     }
 
     ~Entering_SUB1()
     {
         cout << "exiting Entering_SUB1" << endl;
-        outermost_context().elapsedTime_ +=
-            std::difftime(std::time(0), outermost_context().startTime_);
+        /*outermost_context().elapsedTime_ +=
+            std::difftime(std::time(0), outermost_context().startTime_);*/
     }
 };
 
@@ -105,7 +85,7 @@ struct Idle : sc::simple_state< Idle, Active >
 
 int main() {
 	
-    StopWatch sm;
+    StopWatch sm(1);
 	sm.initiate();
 	sm.process_event(EvStartSUB());
 	sm.process_event(EvReset());
