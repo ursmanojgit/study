@@ -29,13 +29,13 @@ struct MAIN_SUB;
 struct Exiting_MAIN_SUB;
 
 
-struct StopWatch : sc::state_machine< StopWatch, Idle >
+struct StreamHandler : sc::state_machine< StreamHandler, Idle >
 {
     // startTime_ remains uninitialized, because there is no reasonable default
-    StopWatch(int p) /* replace this param by A2dpSrcQ pointer*/ {
+    StreamHandler(int p) /* replace this param by A2dpSrcQ pointer*/ {
         cout << "StateMachine" << endl;
     };
-    ~StopWatch()
+    ~StreamHandler()
     {
         terminate();
     }
@@ -43,12 +43,19 @@ struct StopWatch : sc::state_machine< StopWatch, Idle >
     int mA2dpSrcQ;
 };
 
-struct EvReset : sc::event<EvReset> {};
-struct EvStartSUB : sc::event<EvStartSUB> {};
+struct EvRequestStartSUB : sc::event<EvRequestStartSUB> {};
+struct EvOnStartedSUB : sc::event<EvOnStartedSUB> {};
+struct EvRequestStartMAIN : sc::event<EvRequestStartMAIN> {};
+struct EvOnStartedMAIN : sc::event<EvOnStartedMAIN> {};
 
-struct Entering_SUB1 : sc::state< Entering_SUB1, StopWatch >
+struct Idle : sc::simple_state< Idle, StreamHandler >
 {
-    typedef sc::transition< EvStartSUB, Idle > reactions;
+    typedef sc::transition< EvRequestStartSUB, Entering_SUB1 > reactions;
+};
+
+struct Entering_SUB1 : sc::state< Entering_SUB1, StreamHandler >
+{
+    typedef sc::transition< EvOnStartedSUB, SUB1 > reactions;
 
     Entering_SUB1(my_context ctx) : my_base(ctx)
     {
@@ -64,20 +71,73 @@ struct Entering_SUB1 : sc::state< Entering_SUB1, StopWatch >
     }
 };
 
-struct Idle : sc::simple_state< Idle, StopWatch >
+struct SUB1 : sc::state< SUB1, StreamHandler >
 {
-    typedef sc::transition< EvStartSUB, Entering_SUB1 > reactions;
+    typedef sc::transition< EvRequestStartMAIN, Entering_MAIN_SUB > reactions;
+
+    SUB1(my_context ctx) : my_base(ctx)
+    {
+        cout << "Entering SUB1" << endl;
+        //outermost_context().startTime_ = std::time(0);
+    }
+
+    ~SUB1()
+    {
+        cout << "exiting SUB1" << endl;
+        /*outermost_context().elapsedTime_ +=
+            std::difftime(std::time(0), outermost_context().startTime_);*/
+    }
 };
+
+struct Entering_MAIN_SUB : sc::state< Entering_MAIN_SUB, StreamHandler >
+{
+    typedef sc::transition< EvOnStartedMAIN, MAIN_SUB > reactions;
+
+    Entering_MAIN_SUB(my_context ctx) : my_base(ctx)
+    {
+        cout << "Entering Entering_MAIN_SUB" << endl;
+        //outermost_context().startTime_ = std::time(0);
+    }
+
+    ~Entering_MAIN_SUB()
+    {
+        cout << "exiting Entering_MAIN_SUB" << endl;
+        /*outermost_context().elapsedTime_ +=
+            std::difftime(std::time(0), outermost_context().startTime_);*/
+    }
+};
+
+struct MAIN_SUB : sc::state< MAIN_SUB, StreamHandler >
+{
+    typedef sc::transition< EvOnStartedMAIN, MAIN_SUB > reactions;
+
+    MAIN_SUB(my_context ctx) : my_base(ctx)
+    {
+        cout << "Entering MAIN_SUB" << endl;
+        //outermost_context().startTime_ = std::time(0);
+    }
+
+    ~MAIN_SUB()
+    {
+        cout << "exiting MAIN_SUB" << endl;
+        /*outermost_context().elapsedTime_ +=
+            std::difftime(std::time(0), outermost_context().startTime_);*/
+    }
+};
+
 
 
 // The Main function
 
 int main() {
 	
-    StopWatch sm(1);
+    StreamHandler sm(1);//TODO: pass A2dpSrcQ's *this so that SM has access to all context data. also make StreamHandler nested of A2dpSrcQ to allow access to all data
 	sm.initiate();
-	sm.process_event(EvStartSUB());
-	sm.process_event(EvReset());
+	sm.process_event(EvRequestStartSUB());
+	sm.process_event(EvOnStartedSUB());
+    sm.process_event(EvRequestStartMAIN());
+    sm.process_event(EvOnStartedMAIN());
+    printf("Exiting main\n");
 	return 0;
 }
 
