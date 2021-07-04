@@ -29,7 +29,7 @@ struct MAIN_SUB;
 struct Exiting_MAIN_SUB;
 
 
-struct StopWatch : sc::state_machine< StopWatch, Active >
+struct StopWatch : sc::state_machine< StopWatch, Idle >
 {
     // startTime_ remains uninitialized, because there is no reasonable default
     StopWatch(int p) /* replace this param by A2dpSrcQ pointer*/ {
@@ -46,18 +46,7 @@ struct StopWatch : sc::state_machine< StopWatch, Active >
 struct EvReset : sc::event<EvReset> {};
 struct EvStartSUB : sc::event<EvStartSUB> {};
 
-struct Active : sc::state< Active, StopWatch, Idle >
-{
-    typedef sc::transition< EvReset, Active > reactions;
-
-    Active(my_context ctx) : my_base(ctx)
-    {
-        cout << "Entering Active" << endl;
-        //outermost_context().elapsedTime_ = 0.0;
-    }
-};
-
-struct Entering_SUB1 : sc::state< Entering_SUB1, Active >
+struct Entering_SUB1 : sc::state< Entering_SUB1, StopWatch >
 {
     typedef sc::transition< EvStartSUB, Idle > reactions;
 
@@ -75,7 +64,7 @@ struct Entering_SUB1 : sc::state< Entering_SUB1, Active >
     }
 };
 
-struct Idle : sc::simple_state< Idle, Active >
+struct Idle : sc::simple_state< Idle, StopWatch >
 {
     typedef sc::transition< EvStartSUB, Entering_SUB1 > reactions;
 };
